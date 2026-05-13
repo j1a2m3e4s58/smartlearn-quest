@@ -1,0 +1,27 @@
+{
+  "overview": "SmartLearn Quest is a commercial-grade educational gaming ecosystem built for schools in Ghana and beyond. Students travel through cinematic Knowledge Worlds — ICT, Mathematics, Science, English, Robotics, and Critical Thinking — earning XP, coins, and achievements as they master curriculum objectives through real gameplay. The platform features 5 fully playable ICT flagship games, a complete progression system, and role-based dashboards for students, teachers, parents, and admins.",
+  "features": [
+    "Cinematic world map with unlockable Knowledge Worlds for ICT, Math, Science, English, Robotics, and Critical Thinking",
+    "5 fully playable ICT games: Mouse Master, Keyboard Ninja, Typing Speed Tournament, Cyber Safety Defense, and Coding Basics Puzzle Arena",
+    "Complete progression system with XP, coins, level badges, achievements, and streak tracking",
+    "Internet Identity login with role-based access for students, teachers, parents, and admins",
+    "Student dashboard with real-time stats, hub progress rings, and achievement grid",
+    "Ghana Education Service curriculum alignment (Basic 1-9 grade levels)",
+    "Dark futuristic AAA-style UI with glassmorphism, neon accents, and smooth Framer Motion transitions",
+    "Mobile-first responsive design from 360px to 1440px",
+    "Navigable stubs for all subject worlds and role dashboards — ready for expansion"
+  ],
+  "category": "education",
+  "tags": [
+    "education",
+    "gaming",
+    "ict",
+    "ghana",
+    "curriculum",
+    "progression",
+    "multiplayer",
+    "dark-theme",
+    "glassmorphism"
+  ],
+  "last_updated": "2026-05-13T08:30:44.858Z"
+}

@@ -1,0 +1,212 @@
+type UserRole__1 = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserRole = 
+ variant {
+   admin;
+   parent;
+   student;
+   teacher;
+ };
+type UserProfileView = 
+ record {
+   createdAt: Timestamp;
+   gradeLevel: opt GradeLevel;
+   role: UserRole;
+   username: text;
+ };
+type UserProfile = 
+ record {
+   createdAt: Timestamp;
+   gradeLevel: opt GradeLevel;
+   role: UserRole;
+   username: text;
+ };
+type UpdateGameStateInput = 
+ record {
+   gameState: text;
+   sessionId: text;
+   status: SessionStatus;
+ };
+type Timestamp = int;
+type SubjectSummary = 
+ record {
+   completedHubs: nat;
+   overallPercent: nat;
+   subjectId: text;
+   totalHubs: nat;
+ };
+type SessionView = 
+ record {
+   createdAt: Timestamp;
+   gameName: text;
+   gameState: text;
+   hostPrincipal: principal;
+   maxParticipants: nat;
+   participants: vec principal;
+   sessionId: text;
+   status: SessionStatus;
+ };
+type SessionStatus = 
+ variant {
+   active;
+   completed;
+   waiting;
+ };
+type ScoreRecord = 
+ record {
+   accuracy: nat;
+   completedAt: Timestamp;
+   gameId: text;
+   score: nat;
+   timeSpent: nat;
+ };
+type ScoreInput = 
+ record {
+   accuracy: nat;
+   gameId: text;
+   score: nat;
+   timeSpent: nat;
+ };
+type Result_4 = 
+ variant {
+   err: Error;
+   ok: ProgressionView;
+ };
+type Result_3 = 
+ variant {
+   err: Error;
+   ok: SessionView;
+ };
+type Result_2 = 
+ variant {
+   err: Error;
+   ok: UserProfileView;
+ };
+type Result_1 = 
+ variant {
+   err: Error;
+   ok: HubProgress;
+ };
+type Result = 
+ variant {
+   err: Error;
+   ok;
+ };
+type RegisterInput = 
+ record {
+   gradeLevel: opt GradeLevel;
+   role: UserRole;
+   username: text;
+ };
+type ProgressionView = 
+ record {
+   coins: nat;
+   currentLevel: nat;
+   dailyStreak: nat;
+   lastPlayedDate: text;
+   totalPlayTime: nat;
+   unlockedAchievements: vec text;
+   xp: nat;
+ };
+type ProgressUpdate = 
+ record {
+   coinsEarned: nat;
+   dateString: text;
+   playTimeSeconds: nat;
+   xpEarned: nat;
+ };
+type PersonalBest = 
+ record {
+   accuracy: nat;
+   achievedAt: Timestamp;
+   gameId: text;
+   score: nat;
+   timeSpent: nat;
+ };
+type LeaderboardEntry = 
+ record {
+   accuracy: nat;
+   achievedAt: Timestamp;
+   playerPrincipal: principal;
+   rank: nat;
+   score: nat;
+   username: text;
+ };
+type HubProgressUpdate = 
+ record {
+   hubId: text;
+   missionsCompleted: nat;
+   totalMissions: nat;
+   unlocked: bool;
+ };
+type HubProgress = 
+ record {
+   completionPercent: nat;
+   hubId: text;
+   lastUpdated: int;
+   missionsCompleted: nat;
+   totalMissions: nat;
+   unlocked: bool;
+ };
+type GradeLevel = 
+ variant {
+   basic1;
+   basic2;
+   basic3;
+   basic4;
+   basic5;
+   basic6;
+   basic7;
+   basic8;
+   basic9;
+ };
+type Error = 
+ variant {
+   alreadyExists;
+   invalidInput: text;
+   notFound;
+   sessionFull;
+   sessionNotFound;
+   unauthorized;
+ };
+type CreateSessionInput = 
+ record {
+   gameName: text;
+   maxParticipants: nat;
+ };
+service : {
+  _initializeAccessControl: () -> ();
+  applyProgressUpdate: (update: ProgressUpdate) -> (Result_4);
+  assignCallerUserRole: (user: principal, role: UserRole__1) -> ();
+  createSession: (input: CreateSessionInput) -> (Result_3);
+  getAllHubProgress: () -> (vec HubProgress) query;
+  getCallerUserProfile: () -> (opt UserProfileView) query;
+  getCallerUserRole: () -> (UserRole__1) query;
+  getHubProgress: (hubId: text) -> (opt HubProgress) query;
+  getMyPersonalBest: (gameId: text) -> (opt PersonalBest) query;
+  getMyProfile: () -> (opt UserProfileView) query;
+  getMyProgression: () -> (opt ProgressionView) query;
+  getMyRecentScores: () -> (vec ScoreRecord) query;
+  getSession: (sessionId: text) -> (opt SessionView) query;
+  getSubjectSummary: (subjectId: text) -> (SubjectSummary) query;
+  getTopScores: (gameId: text) -> (vec LeaderboardEntry) query;
+  getUserProfile: ("principal": principal) -> (Result_2) query;
+  getUserProgression: ("principal": principal) -> (Result_4) query;
+  getWeeklyScores: (gameId: text, weekKey: text) ->
+   (vec LeaderboardEntry) query;
+  isCallerAdmin: () -> (bool) query;
+  joinSession: (sessionId: text) -> (Result_3);
+  leaveSession: (sessionId: text) -> (Result);
+  listWaitingSessions: (gameName: text) -> (vec SessionView) query;
+  recordScore: (input: ScoreInput) -> (Result);
+  registerProfile: (input: RegisterInput) -> (Result_2);
+  saveCallerUserProfile: (profile: UserProfile) -> ();
+  unlockAchievement: (achievementId: text) -> (Result);
+  updateGameState: (input: UpdateGameStateInput) -> (Result);
+  updateHubProgress: (update: HubProgressUpdate) -> (Result_1);
+  updateUsername: (newUsername: text) -> (Result);
+}

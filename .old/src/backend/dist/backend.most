@@ -1,0 +1,170 @@
+// Version: 1.0.0
+type Achievement__701899218 =
+  {achievementId : Text; unlockedAt : Timestamp__301639476};
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type GradeLevel__275440731 =
+  {
+    #basic1;
+    #basic2;
+    #basic3;
+    #basic4;
+    #basic5;
+    #basic6;
+    #basic7;
+    #basic8;
+    #basic9
+  };
+type HubProgress__156897360 =
+  {
+    completionPercent : Nat;
+    hubId : Text;
+    lastUpdated : Int;
+    missionsCompleted : Nat;
+    totalMissions : Nat;
+    unlocked : Bool
+  };
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type LeaderboardEntry__684075585 =
+  {
+    accuracy : Nat;
+    achievedAt : Timestamp__301639476;
+    playerPrincipal : Principal;
+    rank : Nat;
+    score : Nat;
+    username : Text
+  };
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type List__415060402<T> = List__790383201<T>;
+type List__790383201<T> =
+  {
+    var blockIndex : Nat__490723111;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__490723111
+  };
+type Map__158565046<K, V> = Map__297112838<K, V>;
+type Map__297112838<K, V> =
+  {var root : Node__46230540<K, V>; var size : Nat__490723111};
+type Map__605269027<K, V> = Map__158565046<K, V>;
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type Node__585180226<T> =
+  {
+    var next : ?Node__585180226<T>;
+    var previous : ?Node__585180226<T>;
+    value : T
+  };
+type PersonalBest__126008717 =
+  {
+    accuracy : Nat;
+    achievedAt : Timestamp__301639476;
+    gameId : Text;
+    score : Nat;
+    timeSpent : Nat
+  };
+type Progression__338714750 =
+  {
+    var coins : Nat;
+    var currentLevel : Nat;
+    var dailyStreak : Nat;
+    var lastPlayedDate : Text;
+    var totalPlayTime : Nat;
+    var xp : Nat
+  };
+type Queue__272502808<T> =
+  {
+    var back : ?Node__585180226<T>;
+    var front : ?Node__585180226<T>;
+    var size : Nat__490723111
+  };
+type Queue__407734825<T> = Queue__272502808<T>;
+type ScoreRecord__681700965 =
+  {
+    accuracy : Nat;
+    completedAt : Timestamp__301639476;
+    gameId : Text;
+    score : Nat;
+    timeSpent : Nat
+  };
+type SessionStatus__1072723669 = {#active; #completed; #waiting};
+type Session__326799348 =
+  {
+    createdAt : Timestamp__301639476;
+    gameName : Text;
+    var gameState : Text;
+    hostPrincipal : Principal;
+    maxParticipants : Nat;
+    var participants : [Principal];
+    sessionId : Text;
+    var status : SessionStatus__1072723669
+  };
+type Timestamp__301639476 = Int;
+type UserProfile__1009003526 =
+  {
+    createdAt : Timestamp__301639476;
+    gradeLevel : ?GradeLevel__275440731;
+    role : UserRole__451090586;
+    username : Text
+  };
+type UserRole__1073662873 = {#admin; #guest; #user};
+type UserRole__451090586 = {#admin; #parent; #student; #teacher};
+actor {
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__605269027<Principal, UserRole__1073662873>
+    };
+  stable achievements :
+    {
+      var root :
+        Node__46230540<Principal, List__415060402<Achievement__701899218>>;
+      var size : Nat__490723111
+    };
+  stable globalLeaderboard :
+    {
+      var root :
+        Node__46230540<Text, List__415060402<LeaderboardEntry__684075585>>;
+      var size : Nat__490723111
+    };
+  stable hubProgress :
+    {
+      var root : Node__46230540<Text, HubProgress__156897360>;
+      var size : Nat__490723111
+    };
+  stable personalBests :
+    {
+      var root : Node__46230540<Text, PersonalBest__126008717>;
+      var size : Nat__490723111
+    };
+  stable progressions :
+    {
+      var root : Node__46230540<Principal, Progression__338714750>;
+      var size : Nat__490723111
+    };
+  stable recentScores :
+    {
+      var root :
+        Node__46230540<Principal, Queue__407734825<ScoreRecord__681700965>>;
+      var size : Nat__490723111
+    };
+  stable sessionState : {var nextSessionId : Nat};
+  stable sessions :
+    {
+      var root : Node__46230540<Text, Session__326799348>;
+      var size : Nat__490723111
+    };
+  stable userProfiles :
+    {
+      var root : Node__46230540<Principal, UserProfile__1009003526>;
+      var size : Nat__490723111
+    };
+  stable weeklyLeaderboard :
+    {
+      var root :
+        Node__46230540<Text, List__415060402<LeaderboardEntry__684075585>>;
+      var size : Nat__490723111
+    }
+};
