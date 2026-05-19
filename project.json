@@ -1,27 +1,32 @@
 {
-  "overview": "SmartLearn Quest is a commercial-grade educational gaming ecosystem built for schools in Ghana and beyond. Students travel through cinematic Knowledge Worlds — ICT, Mathematics, Science, English, Robotics, and Critical Thinking — earning XP, coins, and achievements as they master curriculum objectives through real gameplay. The platform features 5 fully playable ICT flagship games, a complete progression system, and role-based dashboards for students, teachers, parents, and admins.",
+  "overview": "SmartLearn Quest is a commercial-grade educational gaming platform for Basic 1-9 learners covering ICT, Mathematics, Science, English, Robotics, and Critical Thinking. Features cinematic audio, adaptive narration, NPC companion, and hundreds of real playable games.",
   "features": [
-    "Cinematic world map with unlockable Knowledge Worlds for ICT, Math, Science, English, Robotics, and Critical Thinking",
-    "5 fully playable ICT games: Mouse Master, Keyboard Ninja, Typing Speed Tournament, Cyber Safety Defense, and Coding Basics Puzzle Arena",
-    "Complete progression system with XP, coins, level badges, achievements, and streak tracking",
-    "Internet Identity login with role-based access for students, teachers, parents, and admins",
-    "Student dashboard with real-time stats, hub progress rings, and achievement grid",
-    "Ghana Education Service curriculum alignment (Basic 1-9 grade levels)",
-    "Dark futuristic AAA-style UI with glassmorphism, neon accents, and smooth Framer Motion transitions",
-    "Mobile-first responsive design from 360px to 1440px",
-    "Navigable stubs for all subject worlds and role dashboards — ready for expansion"
+    "Basic 1-9 world navigation with progressive unlock system",
+    "72+ subject hub games with full mechanics, scoring, and three difficulty levels",
+    "85+ new Basic 1-3 sub-games across all 6 subjects",
+    "Cinematic audio engine with adaptive multi-layer music and 6-world ambience",
+    "Voice narration in English and Twi before every game",
+    "NPC mascot companion with animated reactions",
+    "Level-up cinematics, world unlock animations, boss battle intros",
+    "Leaderboard system with XP/coins ranking",
+    "Achievement unlock system with 20 achievements",
+    "Local save system with IndexedDB auto-backup",
+    "Screen shake, particle explosions, combo streaks, cinematic zoom"
   ],
   "category": "education",
   "tags": [
     "education",
     "gaming",
+    "learning",
     "ict",
+    "mathematics",
+    "science",
+    "english",
+    "robotics",
+    "critical-thinking",
+    "pwa",
     "ghana",
-    "curriculum",
-    "progression",
-    "multiplayer",
-    "dark-theme",
-    "glassmorphism"
+    "basic-school"
   ],
-  "last_updated": "2026-05-13T08:30:44.858Z"
+  "last_updated": "2026-05-19T10:16:05.003Z"
 }

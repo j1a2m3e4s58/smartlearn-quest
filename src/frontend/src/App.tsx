@@ -13,6 +13,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { Suspense, lazy } from "react";
 
 const WorldMapPage = lazy(() => import("@/pages/WorldMapPage"));
+const BasicLevelSelectPage = lazy(() => import("@/pages/BasicLevelSelectPage"));
+const WorldSubjectsPage = lazy(() => import("@/pages/WorldSubjectsPage"));
+const CategoryGridPage = lazy(() => import("@/pages/CategoryGridPage"));
+const SubGameGridPage = lazy(() => import("@/pages/SubGameGridPage"));
 
 const HubPage = lazy(() => import("@/pages/HubPage"));
 const GamePage = lazy(() => import("@/pages/GamePage"));
@@ -203,6 +207,54 @@ const adminDashRoute = createRoute({
   ),
 });
 
+const worldRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/world",
+  component: () => (
+    <SuspenseWrapper>
+      <PageWrapper>
+        <BasicLevelSelectPage />
+      </PageWrapper>
+    </SuspenseWrapper>
+  ),
+});
+
+const worldLevelSubjectsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/world/$levelId/subjects",
+  component: () => (
+    <SuspenseWrapper>
+      <PageWrapper>
+        <WorldSubjectsPage />
+      </PageWrapper>
+    </SuspenseWrapper>
+  ),
+});
+
+const worldLevelSubjectCategoriesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/world/$levelId/subject/$subjectId/categories",
+  component: () => (
+    <SuspenseWrapper>
+      <PageWrapper>
+        <CategoryGridPage />
+      </PageWrapper>
+    </SuspenseWrapper>
+  ),
+});
+
+const worldLevelSubjectCategoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/world/$levelId/subject/$subjectId/category/$categoryId",
+  component: () => (
+    <SuspenseWrapper>
+      <PageWrapper>
+        <SubGameGridPage />
+      </PageWrapper>
+    </SuspenseWrapper>
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -216,6 +268,10 @@ const routeTree = rootRoute.addChildren([
   teacherDashRoute,
   parentDashRoute,
   adminDashRoute,
+  worldRoute,
+  worldLevelSubjectsRoute,
+  worldLevelSubjectCategoriesRoute,
+  worldLevelSubjectCategoryRoute,
 ]);
 
 const router = createRouter({ routeTree });

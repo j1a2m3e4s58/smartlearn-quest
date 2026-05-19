@@ -63,6 +63,15 @@
     --glass-bg: rgba(255, 255, 255, 0.04);
     --glass-border: rgba(255, 255, 255, 0.08);
     --scanline-opacity: 0.015;
+
+    --narration-panel-bg: oklch(0.08 0.02 260 / 0.95);
+    --narration-panel-border: oklch(0.65 0.2 200 / 0.4);
+    --particle-cyan: oklch(0.85 0.2 200);
+    --particle-purple: oklch(0.65 0.25 290);
+    --particle-gold: oklch(0.85 0.2 80);
+    --world-node-active: oklch(0.65 0.25 290);
+    --world-node-idle: oklch(0.4 0.1 260);
+    --world-node-locked: oklch(0.25 0.05 260);
   }
 
   /* No separate .dark block — always dark theme */
@@ -312,4 +321,145 @@
       transition-duration: 0.01ms !important;
     }
   }
+}
+
+@keyframes screen-shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+  75% {
+    transform: translateX(-4px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes particle-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-80px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes combo-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 24px oklch(0.85 0.2 200 / 0.7), 0 0 48px
+      oklch(0.85 0.2 200 / 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+
+@keyframes achievement-bounce {
+  0% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(-10px);
+  }
+  80% {
+    transform: translateY(-14px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes cinematic-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes score-popup {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(-40px) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-60px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.screen-shake {
+  animation: screen-shake 0.3s ease-in-out;
+}
+.particle-rise {
+  animation: particle-rise 1s ease-out forwards;
+}
+.combo-pulse {
+  animation: combo-pulse 0.4s ease-in-out;
+}
+.achievement-bounce {
+  animation: achievement-bounce 0.6s ease-in-out;
+}
+.cinematic-fade-in {
+  animation: cinematic-fade-in 0.5s ease-out;
 }

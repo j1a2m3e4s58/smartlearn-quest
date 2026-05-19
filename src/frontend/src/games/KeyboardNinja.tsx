@@ -1,5 +1,14 @@
 import { GlowButton } from "@/components/ui/GlowButton";
-import { CheckCircle, Heart, Keyboard, XCircle } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  CheckCircle,
+  Heart,
+  Keyboard,
+  XCircle,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -8,6 +17,183 @@ import {
   buildResult,
   useGameTimer,
 } from "./GameEngine";
+
+interface Props {
+  config: GameConfig;
+  onGameEnd: (result: GameResult) => void;
+}
+
+// ─ Game 1: Keyboard Warrior (WPM Typing) ─
+
+const PASSAGES = [
+  "The computer is one of the most important inventions in human history. It processes information at incredible speeds and allows people to communicate across the world.",
+  "A keyboard is an input device used to enter text and commands into a computer. Learning to type quickly and accurately is an important skill in the modern world.",
+  "The internet connects billions of devices worldwide. It allows people to share information, communicate, and access resources from anywhere on the planet.",
+  "Software consists of programs and operating systems that run on computer hardware. Without software, hardware cannot perform any useful tasks for the user.",
+];
+
+function KeyboardWarrior({ config, onGameEnd }: Props) {
+  const [started, setStarted] = useState(false);
+  const [over, setOver] = useState(false);
+  const [pIdx, setPIdx] = useState(0);
+  const [typed, setTyped] = useState("");
+  const [errors, setErrors] = useState(0);
+  const [wpm, setWpm] = useState(0);
+  const [score, setScore] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const startRef = useRef(Date.now());
+  const scoreRef = useRef(0);
+  const errorsRef = useRef(0);
+  scoreRef.current = score;
+  errorsRef.current = errors;
+
+  const passage = PASSAGES[pIdx % PASSAGES.length];
+
+  const endGame = useCallback(
+    (completed: boolean) => {
+      if (over) return;
+      setOver(true);
+      const acc = Math.max(0, 100 - (errorsRef.current / passage.length) * 100);
+      onGameEnd(
+        buildResult(
+          config,
+          scoreRef.current,
+          acc,
+          Math.floor((Date.now() - startRef.current) / 1000),
+          completed,
+        ),
+      );
+    },
+    [config, onGameEnd, over, passage.length],
+  );
+
+  const { timeLeft, start: startTimer } = useGameTimer(config.timeLimit, () =>
+    endGame(true),
+  );
+
+  function handleInput(val: string) {
+    if (!started || over) return;
+    setTyped(val);
+    const elapsed = (Date.now() - startRef.current) / 60000;
+    const wordsTyped = val.trim().split(" ").length;
+    setWpm(elapsed > 0 ? Math.round(wordsTyped / elapsed) : 0);
+
+    if (val.length > typed.length) {
+      const idx = val.length - 1;
+      if (val[idx] !== passage[idx]) setErrors((e) => e + 1);
+    }
+
+    if (val === passage) {
+      setScore((s) => s + 300 * config.difficulty + wpm * 2);
+      const next = pIdx + 1;
+      setPIdx(next);
+      setTyped("");
+      if (next >= PASSAGES.length) endGame(true);
+    }
+  }
+
+  function startGame() {
+    startRef.current = Date.now();
+    setStarted(true);
+    startTimer();
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
+
+  const pct = (timeLeft / config.timeLimit) * 100;
+
+  return (
+    <div
+      className="w-full h-full flex flex-col gap-3"
+      data-ocid="keyboard_warrior.page"
+    >
+      <div className="game-hud flex items-center justify-between gap-4 shrink-0">
+        <div className="flex items-center gap-2 text-[#00f5ff]">
+          <Keyboard className="h-4 w-4" />
+          <span className="text-lg font-bold">{score.toLocaleString()}</span>
+        </div>
+        <span className="text-sm font-bold text-[#f59e0b]">{wpm} WPM</span>
+        <div className="flex items-center gap-2">
+          <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full xp-fill transition-all duration-1000"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">{timeLeft}s</span>
+        </div>
+      </div>
+      {!started ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <Keyboard className="h-14 w-14 text-[#00f5ff]" />
+          <h2
+            className="text-3xl font-black glow-cyan-text"
+            style={{ fontFamily: "'Orbitron', sans-serif" }}
+          >
+            Keyboard Warrior
+          </h2>
+          <p className="text-muted-foreground text-sm text-center max-w-xs">
+            Type the displayed passage as fast and accurately as possible. WPM
+            and accuracy determine your score.
+          </p>
+          <GlowButton
+            variant="primary"
+            size="lg"
+            onClick={startGame}
+            data-ocid="keyboard_warrior.start_button"
+          >
+            Begin Training
+          </GlowButton>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col gap-4">
+          <div className="glass rounded-xl p-4 border border-border/30">
+            <p
+              className="text-sm leading-relaxed font-mono"
+              data-ocid="keyboard_warrior.passage"
+            >
+              {passage.split("").map((ch, i) => {
+                let cls = "text-muted-foreground/50";
+                if (i < typed.length)
+                  cls =
+                    typed[i] === ch
+                      ? "text-[#10b981]"
+                      : "text-[#f43f5e] bg-[#f43f5e]/20";
+                else if (i === typed.length)
+                  cls = "text-foreground border-b-2 border-[#00f5ff]";
+
+                return (
+                  <span key={`c-${i}`} className={cls}>
+                    {ch}
+                  </span>
+                );
+              })}
+            </p>
+          </div>
+          <input
+            ref={inputRef}
+            value={typed}
+            onChange={(e) => handleInput(e.target.value)}
+            className="glass rounded-xl p-3 border border-[#00f5ff]/40 focus:border-[#00f5ff] outline-none text-sm font-mono bg-transparent text-foreground"
+            placeholder="Start typing here..."
+            data-ocid="keyboard_warrior.input"
+            spellCheck={false}
+            autoComplete="off"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>
+              Errors: <span className="text-[#f43f5e] font-bold">{errors}</span>
+            </span>
+            <span>
+              Passage {pIdx + 1}/{PASSAGES.length}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─ Game 2: Key Mastery (Shortcut Combat) ─
 
 interface Shortcut {
   action: string;
@@ -84,10 +270,10 @@ const SHORTCUTS: Shortcut[] = [
     category: "Format",
   },
   {
-    action: "Underline",
-    keys: ["Control", "u"],
-    display: "Ctrl + U",
-    category: "Format",
+    action: "Undo",
+    keys: ["Control", "z"],
+    display: "Ctrl + Z",
+    category: "Edit",
   },
   {
     action: "Redo",
@@ -101,53 +287,47 @@ const SHORTCUTS: Shortcut[] = [
     display: "Ctrl + W",
     category: "Navigation",
   },
-  {
-    action: "Open",
-    keys: ["Control", "o"],
-    display: "Ctrl + O",
-    category: "File",
-  },
 ];
 
 type FlashState = "idle" | "correct" | "wrong";
 
-interface Props {
-  config: GameConfig;
-  onGameEnd: (result: GameResult) => void;
-}
-
-export default function KeyboardNinja({ config, onGameEnd }: Props) {
-  const [gameStarted, setGameStarted] = useState(false);
+function KeyMastery({ config, onGameEnd }: Props) {
+  const [started, setStarted] = useState(false);
   const [lives, setLives] = useState(config.livesCount);
   const [score, setScore] = useState(0);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [shuffled, setShuffled] = useState<Shortcut[]>([]);
   const [flash, setFlash] = useState<FlashState>("idle");
   const [showAnswer, setShowAnswer] = useState(false);
-  const [totalAnswers, setTotalAnswers] = useState(0);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
-  const startTimeRef = useRef(Date.now());
+  const [correct, setCorrect] = useState(0);
+  const [total, setTotal] = useState(0);
+  const startRef = useRef(Date.now());
   const gameOverRef = useRef(false);
   const livesRef = useRef(lives);
   const scoreRef = useRef(score);
-  const correctRef = useRef(correctAnswers);
-  const totalRef = useRef(totalAnswers);
+  const correctRef = useRef(correct);
+  const totalRef = useRef(total);
   livesRef.current = lives;
   scoreRef.current = score;
-  correctRef.current = correctAnswers;
-  totalRef.current = totalAnswers;
+  correctRef.current = correct;
+  totalRef.current = total;
 
   const endGame = useCallback(
     (completed: boolean) => {
       if (gameOverRef.current) return;
       gameOverRef.current = true;
-      const accuracy =
+      const acc =
         totalRef.current > 0
           ? (correctRef.current / totalRef.current) * 100
           : 0;
-      const timeSpent = Math.floor((Date.now() - startTimeRef.current) / 1000);
       onGameEnd(
-        buildResult(config, scoreRef.current, accuracy, timeSpent, completed),
+        buildResult(
+          config,
+          scoreRef.current,
+          acc,
+          Math.floor((Date.now() - startRef.current) / 1000),
+          completed,
+        ),
       );
     },
     [config, onGameEnd],
@@ -158,31 +338,26 @@ export default function KeyboardNinja({ config, onGameEnd }: Props) {
   );
 
   useEffect(() => {
-    const arr = [...SHORTCUTS].sort(() => Math.random() - 0.5);
-    setShuffled(arr);
+    setShuffled([...SHORTCUTS].sort(() => Math.random() - 0.5));
   }, []);
 
   useEffect(() => {
-    if (!gameStarted || gameOverRef.current || flash !== "idle") return;
+    if (!started || gameOverRef.current || flash !== "idle") return;
     function handleKey(e: KeyboardEvent) {
       e.preventDefault();
       if (!shuffled.length) return;
-      const current = shuffled[currentIdx % shuffled.length];
-      const pressedKey = e.key.toLowerCase();
-      const expectedKey = current.keys[current.keys.length - 1].toLowerCase();
-      const needsCtrl = current.keys.includes("Control");
-      const needsShift = current.keys.includes("Shift");
-      const needsAlt = current.keys.includes("Alt");
-      const ctrlOk = needsCtrl ? e.ctrlKey || e.metaKey : true;
-      const shiftOk = needsShift ? e.shiftKey : !e.shiftKey;
-      const altOk = needsAlt ? e.altKey : !e.altKey;
-      const isCorrect =
-        ctrlOk && shiftOk && altOk && pressedKey === expectedKey;
-      setTotalAnswers((t) => t + 1);
+      const cur = shuffled[currentIdx % shuffled.length];
+      const pk = e.key.toLowerCase();
+      const ek = cur.keys[cur.keys.length - 1].toLowerCase();
+      const ctrlOk = cur.keys.includes("Control")
+        ? e.ctrlKey || e.metaKey
+        : true;
+      const shiftOk = cur.keys.includes("Shift") ? e.shiftKey : !e.shiftKey;
+      const isCorrect = ctrlOk && shiftOk && pk === ek;
+      setTotal((t) => t + 1);
       if (isCorrect) {
-        const levelMult = config.difficulty;
-        setScore((s) => s + 150 * levelMult);
-        setCorrectAnswers((c) => c + 1);
+        setScore((s) => s + 150 * config.difficulty);
+        setCorrect((c) => c + 1);
         setFlash("correct");
         setTimeout(() => {
           setFlash("idle");
@@ -192,9 +367,9 @@ export default function KeyboardNinja({ config, onGameEnd }: Props) {
         setFlash("wrong");
         setShowAnswer(true);
         setLives((l) => {
-          const newL = l - 1;
-          if (newL <= 0) endGame(false);
-          return newL;
+          const nl = l - 1;
+          if (nl <= 0) endGame(false);
+          return Math.max(0, nl);
         });
         setTimeout(() => {
           setFlash("idle");
@@ -205,40 +380,27 @@ export default function KeyboardNinja({ config, onGameEnd }: Props) {
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [gameStarted, flash, currentIdx, shuffled, config.difficulty, endGame]);
+  }, [started, flash, currentIdx, shuffled, config.difficulty, endGame]);
 
-  function handleStart() {
-    startTimeRef.current = Date.now();
-    gameOverRef.current = false;
-    setGameStarted(true);
-    startTimer();
-  }
-
-  const current =
+  const cur =
     shuffled.length > 0 ? shuffled[currentIdx % shuffled.length] : null;
-  const progressPct = (timeLeft / config.timeLimit) * 100;
+  const pct = (timeLeft / config.timeLimit) * 100;
 
   return (
     <div
-      className="w-full h-full flex flex-col gap-3 select-none"
-      data-ocid="keyboard_ninja.page"
+      className="w-full h-full flex flex-col gap-3"
+      data-ocid="key_mastery.page"
     >
-      {/* HUD */}
       <div className="game-hud flex items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-2 text-[#00f5ff]">
           <Keyboard className="h-4 w-4" />
           <span className="text-lg font-bold">{score.toLocaleString()}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex gap-1">
           {Array.from({ length: config.livesCount }).map((_, i) => (
             <Heart
-              // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length heart row, positional index is stable
-              key={`heart-${i}`}
-              className={`h-4 w-4 ${
-                i < lives
-                  ? "text-[#f43f5e] fill-[#f43f5e]"
-                  : "text-muted-foreground"
-              }`}
+              key={`h-${i}`}
+              className={`h-4 w-4 ${i < lives ? "text-[#f43f5e] fill-[#f43f5e]" : "text-muted-foreground"}`}
             />
           ))}
         </div>
@@ -246,44 +408,41 @@ export default function KeyboardNinja({ config, onGameEnd }: Props) {
           <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full xp-fill transition-all duration-1000"
-              style={{ width: `${progressPct}%` }}
+              style={{ width: `${pct}%` }}
             />
           </div>
-          <span className="text-xs text-muted-foreground tabular-nums w-6">
-            {timeLeft}s
-          </span>
+          <span className="text-xs text-muted-foreground">{timeLeft}s</span>
         </div>
       </div>
-
-      {/* Main card */}
       <div className="flex-1 flex items-center justify-center">
-        {!gameStarted ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-card rounded-2xl p-10 text-center max-w-md w-full"
-          >
+        {!started ? (
+          <div className="glass-card rounded-2xl p-10 text-center max-w-md w-full">
             <Keyboard className="h-14 w-14 mx-auto mb-4 text-[#00f5ff]" />
             <h2
               className="text-3xl font-black glow-cyan-text mb-3"
               style={{ fontFamily: "'Orbitron', sans-serif" }}
             >
-              Keyboard Ninja
+              Key Mastery
             </h2>
             <p className="text-muted-foreground mb-6 text-sm">
-              Press the correct keyboard shortcut shown on screen. Speed and
-              accuracy both count.
+              Press the correct keyboard shortcut for the displayed action.
+              Speed and accuracy both count.
             </p>
             <GlowButton
               variant="primary"
               size="lg"
-              onClick={handleStart}
-              data-ocid="keyboard_ninja.start_button"
+              onClick={() => {
+                startRef.current = Date.now();
+                gameOverRef.current = false;
+                setStarted(true);
+                startTimer();
+              }}
+              data-ocid="key_mastery.start_button"
             >
               Begin Training
             </GlowButton>
-          </motion.div>
-        ) : current ? (
+          </div>
+        ) : cur ? (
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIdx}
@@ -298,13 +457,13 @@ export default function KeyboardNinja({ config, onGameEnd }: Props) {
                     ? "border-[#f43f5e] shadow-[0_0_30px_rgba(244,63,94,0.4)]"
                     : "border-border/30"
               }`}
-              data-ocid="keyboard_ninja.challenge_card"
+              data-ocid="key_mastery.challenge_card"
             >
               <span
                 className="text-xs uppercase tracking-widest text-muted-foreground"
                 style={{ fontFamily: "'Orbitron', sans-serif" }}
               >
-                {current.category}
+                {cur.category}
               </span>
               <h2
                 className="text-4xl font-black mt-2 mb-6"
@@ -313,19 +472,18 @@ export default function KeyboardNinja({ config, onGameEnd }: Props) {
                   color: "#00f5ff",
                 }}
               >
-                {current.action}
+                {cur.action}
               </h2>
               <p className="text-muted-foreground text-sm mb-4">
-                Press the shortcut for:
+                Press the keyboard shortcut for this action:
               </p>
               <div className="flex items-center justify-center gap-3 flex-wrap">
-                {current.keys.map((k, ki) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: keyboard shortcut keys are stable positional items
-                  <span key={`key-${ki}`}>
+                {cur.keys.map((k, ki) => (
+                  <span key={`k-${ki}`}>
                     <kbd className="px-3 py-1.5 rounded-lg border border-[#00f5ff]/50 text-[#00f5ff] font-mono text-lg font-bold bg-[#00f5ff]/5">
                       {k}
                     </kbd>
-                    {ki < current.keys.length - 1 && (
+                    {ki < cur.keys.length - 1 && (
                       <span className="text-muted-foreground mx-1">+</span>
                     )}
                   </span>
@@ -338,7 +496,7 @@ export default function KeyboardNinja({ config, onGameEnd }: Props) {
                   className="mt-4 flex items-center justify-center gap-2 text-[#f43f5e]"
                 >
                   <XCircle className="h-5 w-5" />
-                  <span className="text-sm">Answer: {current.display}</span>
+                  <span className="text-sm">Answer: {cur.display}</span>
                 </motion.div>
               )}
               {flash === "correct" && (
@@ -359,4 +517,655 @@ export default function KeyboardNinja({ config, onGameEnd }: Props) {
       </div>
     </div>
   );
+}
+
+// ─ Game 3: Function Key Boss ─
+
+const FUNCTION_KEYS = [
+  { key: "F1", action: "Open Help", context: "Most applications" },
+  { key: "F2", action: "Rename selected item", context: "File Explorer" },
+  { key: "F3", action: "Search / Find", context: "Browser / Explorer" },
+  { key: "F4", action: "Open address bar", context: "Browser" },
+  { key: "F5", action: "Refresh / Reload", context: "Browser / Desktop" },
+  { key: "F6", action: "Move focus to address bar", context: "Browser" },
+  {
+    key: "F7",
+    action: "Spelling and Grammar check",
+    context: "Microsoft Word",
+  },
+  { key: "F8", action: "Boot menu access", context: "System Startup" },
+  { key: "F9", action: "Send/Receive emails", context: "Microsoft Outlook" },
+  { key: "F10", action: "Activate menu bar", context: "Windows applications" },
+  { key: "F11", action: "Toggle Full Screen", context: "Browser / Explorer" },
+  { key: "F12", action: "Open Developer Tools", context: "Browser" },
+];
+
+function FunctionKeyBoss({ config, onGameEnd }: Props) {
+  const [started, setStarted] = useState(false);
+  const [lives, setLives] = useState(config.livesCount);
+  const [score, setScore] = useState(0);
+  const [taskIdx, setTaskIdx] = useState(0);
+  const [flash, setFlash] = useState<FlashState>("idle");
+  const [pressedKey, setPressedKey] = useState("");
+  const [correct, setCorrect] = useState(0);
+  const [total, setTotal] = useState(0);
+  const startRef = useRef(Date.now());
+  const gameOverRef = useRef(false);
+  const livesRef = useRef(lives);
+  const scoreRef = useRef(score);
+  const correctRef = useRef(correct);
+  const totalRef = useRef(total);
+  livesRef.current = lives;
+  scoreRef.current = score;
+  correctRef.current = correct;
+  totalRef.current = total;
+
+  const [tasks] = useState(() =>
+    [...FUNCTION_KEYS].sort(() => Math.random() - 0.5),
+  );
+
+  const endGame = useCallback(
+    (completed: boolean) => {
+      if (gameOverRef.current) return;
+      gameOverRef.current = true;
+      const acc =
+        totalRef.current > 0
+          ? (correctRef.current / totalRef.current) * 100
+          : 0;
+      onGameEnd(
+        buildResult(
+          config,
+          scoreRef.current,
+          acc,
+          Math.floor((Date.now() - startRef.current) / 1000),
+          completed,
+        ),
+      );
+    },
+    [config, onGameEnd],
+  );
+
+  const { timeLeft, start: startTimer } = useGameTimer(config.timeLimit, () =>
+    endGame(true),
+  );
+
+  useEffect(() => {
+    if (!started || gameOverRef.current || flash !== "idle") return;
+    function handleKey(e: KeyboardEvent) {
+      if (!e.key.startsWith("F") || e.key.length > 3) return;
+      e.preventDefault();
+      const task = tasks[taskIdx % tasks.length];
+      setTotal((t) => t + 1);
+      setPressedKey(e.key);
+      if (e.key === task.key) {
+        setScore((s) => s + 200 * config.difficulty);
+        setCorrect((c) => c + 1);
+        setFlash("correct");
+        setTimeout(() => {
+          setFlash("idle");
+          setPressedKey("");
+          setTaskIdx((i) => i + 1);
+        }, 700);
+      } else {
+        setFlash("wrong");
+        setLives((l) => {
+          const nl = l - 1;
+          if (nl <= 0) endGame(false);
+          return Math.max(0, nl);
+        });
+        setTimeout(() => {
+          setFlash("idle");
+          setPressedKey("");
+          setTaskIdx((i) => i + 1);
+        }, 1000);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [started, flash, taskIdx, tasks, config.difficulty, endGame]);
+
+  const task = tasks[taskIdx % tasks.length];
+  const pct = (timeLeft / config.timeLimit) * 100;
+
+  return (
+    <div
+      className="w-full h-full flex flex-col gap-3"
+      data-ocid="function_key_boss.page"
+    >
+      <div className="game-hud flex items-center justify-between gap-4 shrink-0">
+        <span className="text-[#00f5ff] font-bold text-lg">
+          {score.toLocaleString()}
+        </span>
+        <div className="flex gap-1">
+          {Array.from({ length: config.livesCount }).map((_, i) => (
+            <Heart
+              key={`h-${i}`}
+              className={`h-4 w-4 ${i < lives ? "text-[#f43f5e] fill-[#f43f5e]" : "text-muted-foreground"}`}
+            />
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full xp-fill transition-all duration-1000"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">{timeLeft}s</span>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center gap-4">
+        {!started ? (
+          <div className="glass-card rounded-2xl p-10 text-center max-w-md w-full">
+            <h2
+              className="text-3xl font-black glow-cyan-text mb-3"
+              style={{ fontFamily: "'Orbitron', sans-serif" }}
+            >
+              Function Key Boss
+            </h2>
+            <p className="text-muted-foreground mb-6 text-sm">
+              Read the action displayed and press the correct Function key
+              (F1-F12) on your keyboard.
+            </p>
+            <GlowButton
+              variant="primary"
+              size="lg"
+              onClick={() => {
+                startRef.current = Date.now();
+                gameOverRef.current = false;
+                setStarted(true);
+                startTimer();
+              }}
+              data-ocid="function_key_boss.start_button"
+            >
+              Start Challenge
+            </GlowButton>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={taskIdx}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className={`glass-card rounded-2xl p-8 text-center max-w-md w-full border-2 ${
+                flash === "correct"
+                  ? "border-[#10b981] shadow-[0_0_30px_rgba(16,185,129,0.4)]"
+                  : flash === "wrong"
+                    ? "border-[#f43f5e] shadow-[0_0_30px_rgba(244,63,94,0.4)]"
+                    : "border-border/30"
+              }`}
+            >
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">
+                {task.context}
+              </p>
+              <h2
+                className="text-2xl font-black text-[#00f5ff] mb-4"
+                style={{ fontFamily: "'Orbitron', sans-serif" }}
+              >
+                {task.action}
+              </h2>
+              <p className="text-muted-foreground text-sm mb-4">
+                Press the correct Function key:
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {FUNCTION_KEYS.map((fk) => (
+                  <div
+                    key={fk.key}
+                    className={`px-3 py-2 rounded-lg border font-mono text-sm font-bold transition-all ${
+                      pressedKey === fk.key
+                        ? flash === "correct"
+                          ? "border-[#10b981] bg-[#10b981]/20 text-[#10b981]"
+                          : "border-[#f43f5e] bg-[#f43f5e]/20 text-[#f43f5e]"
+                        : fk.key === task.key && flash === "wrong"
+                          ? "border-[#10b981] bg-[#10b981]/10 text-[#10b981]"
+                          : "border-border/40 text-muted-foreground"
+                    }`}
+                  >
+                    {fk.key}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─ Game 4: Symbol Sprint ─
+
+const SYMBOL_CHALLENGES = [
+  { symbol: "@", hint: "Shift + 2", keys: "Shift+2" },
+  { symbol: "#", hint: "Shift + 3", keys: "Shift+3" },
+  { symbol: "$", hint: "Shift + 4", keys: "Shift+4" },
+  { symbol: "%", hint: "Shift + 5", keys: "Shift+5" },
+  { symbol: "^", hint: "Shift + 6", keys: "Shift+6" },
+  { symbol: "&", hint: "Shift + 7", keys: "Shift+7" },
+  { symbol: "*", hint: "Shift + 8", keys: "Shift+8" },
+  { symbol: "(", hint: "Shift + 9", keys: "Shift+9" },
+  { symbol: ")", hint: "Shift + 0", keys: "Shift+0" },
+  { symbol: "!", hint: "Shift + 1", keys: "Shift+1" },
+  { symbol: "_", hint: "Shift + Minus", keys: "Shift+-" },
+  { symbol: "+", hint: "Shift + Equals", keys: "Shift+=" },
+  { symbol: "{", hint: "Shift + [", keys: "Shift+[" },
+  { symbol: "}", hint: "Shift + ]", keys: "Shift+]" },
+  { symbol: "|", hint: "Shift + Backslash", keys: "Shift+\\" },
+  { symbol: ":", hint: "Shift + Semicolon", keys: "Shift+;" },
+  { symbol: '"', hint: "Shift + Quote", keys: "Shift+'" },
+  { symbol: "<", hint: "Shift + Comma", keys: "Shift+," },
+  { symbol: ">", hint: "Shift + Period", keys: "Shift+." },
+  { symbol: "?", hint: "Shift + Slash", keys: "Shift+/" },
+];
+
+function SymbolSprint({ config, onGameEnd }: Props) {
+  const [started, setStarted] = useState(false);
+  const [lives, setLives] = useState(config.livesCount);
+  const [score, setScore] = useState(0);
+  const [taskIdx, setTaskIdx] = useState(0);
+  const [flash, setFlash] = useState<FlashState>("idle");
+  const [correct, setCorrect] = useState(0);
+  const [total, setTotal] = useState(0);
+  const startRef = useRef(Date.now());
+  const gameOverRef = useRef(false);
+  const scoreRef = useRef(score);
+  const correctRef = useRef(correct);
+  const totalRef = useRef(total);
+  scoreRef.current = score;
+  correctRef.current = correct;
+  totalRef.current = total;
+
+  const [tasks] = useState(() =>
+    [...SYMBOL_CHALLENGES].sort(() => Math.random() - 0.5),
+  );
+
+  const endGame = useCallback(
+    (completed: boolean) => {
+      if (gameOverRef.current) return;
+      gameOverRef.current = true;
+      const acc =
+        totalRef.current > 0
+          ? (correctRef.current / totalRef.current) * 100
+          : 0;
+      onGameEnd(
+        buildResult(
+          config,
+          scoreRef.current,
+          acc,
+          Math.floor((Date.now() - startRef.current) / 1000),
+          completed,
+        ),
+      );
+    },
+    [config, onGameEnd],
+  );
+
+  const { timeLeft, start: startTimer } = useGameTimer(config.timeLimit, () =>
+    endGame(true),
+  );
+
+  useEffect(() => {
+    if (!started || gameOverRef.current || flash !== "idle") return;
+    function handleKey(e: KeyboardEvent) {
+      const task = tasks[taskIdx % tasks.length];
+      const typed = e.shiftKey ? e.key : e.key;
+      setTotal((t) => t + 1);
+      if (typed === task.symbol) {
+        setScore((s) => s + 180 * config.difficulty);
+        setCorrect((c) => c + 1);
+        setFlash("correct");
+        setTimeout(() => {
+          setFlash("idle");
+          setTaskIdx((i) => i + 1);
+        }, 500);
+      } else if (e.key !== "Shift" && e.key !== "Control") {
+        setFlash("wrong");
+        setLives((l) => {
+          const nl = l - 1;
+          if (nl <= 0) endGame(false);
+          return Math.max(0, nl);
+        });
+        setTimeout(() => {
+          setFlash("idle");
+          setTaskIdx((i) => i + 1);
+        }, 800);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [started, flash, taskIdx, tasks, config.difficulty, endGame]);
+
+  const task = tasks[taskIdx % tasks.length];
+  const pct = (timeLeft / config.timeLimit) * 100;
+
+  return (
+    <div
+      className="w-full h-full flex flex-col gap-3"
+      data-ocid="symbol_sprint.page"
+    >
+      <div className="game-hud flex items-center justify-between gap-4 shrink-0">
+        <span className="text-[#00f5ff] font-bold text-lg">
+          {score.toLocaleString()}
+        </span>
+        <div className="flex gap-1">
+          {Array.from({ length: config.livesCount }).map((_, i) => (
+            <Heart
+              key={`h-${i}`}
+              className={`h-4 w-4 ${i < lives ? "text-[#f43f5e] fill-[#f43f5e]" : "text-muted-foreground"}`}
+            />
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full xp-fill transition-all duration-1000"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">{timeLeft}s</span>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center">
+        {!started ? (
+          <div className="glass-card rounded-2xl p-10 text-center max-w-md w-full">
+            <h2
+              className="text-3xl font-black glow-cyan-text mb-3"
+              style={{ fontFamily: "'Orbitron', sans-serif" }}
+            >
+              Symbol Sprint
+            </h2>
+            <p className="text-muted-foreground mb-6 text-sm">
+              Type the symbol shown on screen using the correct Shift key
+              combination. Master special characters!
+            </p>
+            <GlowButton
+              variant="primary"
+              size="lg"
+              onClick={() => {
+                startRef.current = Date.now();
+                gameOverRef.current = false;
+                setStarted(true);
+                startTimer();
+              }}
+              data-ocid="symbol_sprint.start_button"
+            >
+              Start Sprint
+            </GlowButton>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={taskIdx}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className={`glass-card rounded-2xl p-10 text-center max-w-xs w-full border-2 ${
+                flash === "correct"
+                  ? "border-[#10b981] shadow-[0_0_30px_rgba(16,185,129,0.4)]"
+                  : flash === "wrong"
+                    ? "border-[#f43f5e] shadow-[0_0_30px_rgba(244,63,94,0.4)]"
+                    : "border-border/30"
+              }`}
+            >
+              <p className="text-muted-foreground text-xs uppercase mb-2">
+                Type this symbol
+              </p>
+              <div
+                className="text-8xl font-black text-[#00f5ff] mb-4"
+                style={{ textShadow: "0 0 30px rgba(0,245,255,0.6)" }}
+              >
+                {task.symbol}
+              </div>
+              <p className="text-muted-foreground text-sm">{task.hint}</p>
+              {flash === "correct" && (
+                <div className="mt-3 text-[#10b981] font-bold text-sm">
+                  +{180 * config.difficulty} pts
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─ Game 5: Nav Warrior (Arrow Key Grid) ─
+
+const GRID_COLS = 8;
+const GRID_ROWS = 6;
+
+interface NavItem {
+  col: number;
+  row: number;
+  collected: boolean;
+}
+
+function NavWarrior({ config, onGameEnd }: Props) {
+  const [started, setStarted] = useState(false);
+  const [over, setOver] = useState(false);
+  const [playerPos, setPlayerPos] = useState({ col: 0, row: 0 });
+  const [items, setItems] = useState<NavItem[]>(() =>
+    Array.from({ length: 5 }).map(() => ({
+      col: 1 + Math.floor(Math.random() * (GRID_COLS - 2)),
+      row: 1 + Math.floor(Math.random() * (GRID_ROWS - 2)),
+      collected: false,
+    })),
+  );
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(config.livesCount);
+  const [moves, setMoves] = useState(0);
+  const startRef = useRef(Date.now());
+  const scoreRef = useRef(0);
+  const gameOverRef = useRef(false);
+  scoreRef.current = score;
+
+  const endGame = useCallback(
+    (completed: boolean) => {
+      if (gameOverRef.current) return;
+      gameOverRef.current = true;
+      const collected = items.filter((i) => i.collected).length;
+      const acc = (collected / items.length) * 100;
+      onGameEnd(
+        buildResult(
+          config,
+          scoreRef.current,
+          acc,
+          Math.floor((Date.now() - startRef.current) / 1000),
+          completed,
+        ),
+      );
+    },
+    [config, onGameEnd, items],
+  );
+
+  const { timeLeft, start: startTimer } = useGameTimer(config.timeLimit, () =>
+    endGame(true),
+  );
+
+  useEffect(() => {
+    if (!started || over || gameOverRef.current) return;
+    function handleKey(e: KeyboardEvent) {
+      if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key))
+        return;
+      e.preventDefault();
+      setMoves((m) => m + 1);
+      setPlayerPos((prev) => {
+        const next = { ...prev };
+        if (e.key === "ArrowUp") next.row = Math.max(0, prev.row - 1);
+        if (e.key === "ArrowDown")
+          next.row = Math.min(GRID_ROWS - 1, prev.row + 1);
+        if (e.key === "ArrowLeft") next.col = Math.max(0, prev.col - 1);
+        if (e.key === "ArrowRight")
+          next.col = Math.min(GRID_COLS - 1, prev.col + 1);
+        setItems((prevItems) => {
+          const updated = prevItems.map((item) =>
+            !item.collected && item.col === next.col && item.row === next.row
+              ? { ...item, collected: true }
+              : item,
+          );
+          const collected = updated.filter((i) => i.collected).length;
+          setScore(
+            (s) =>
+              s +
+              (updated.filter((i) => i.collected).length -
+                prevItems.filter((i) => i.collected).length) *
+                150 *
+                config.difficulty,
+          );
+          if (collected === updated.length) endGame(true);
+          return updated;
+        });
+        return next;
+      });
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [started, over, endGame, config.difficulty]);
+
+  const pct = (timeLeft / config.timeLimit) * 100;
+  const cellSize = 52;
+
+  return (
+    <div
+      className="w-full h-full flex flex-col gap-3"
+      data-ocid="nav_warrior.page"
+    >
+      <div className="game-hud flex items-center justify-between gap-4 shrink-0">
+        <span className="text-[#00f5ff] font-bold text-lg">
+          {score.toLocaleString()}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          Items: {items.filter((i) => i.collected).length}/{items.length}
+        </span>
+        <div className="flex items-center gap-2">
+          <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full xp-fill transition-all duration-1000"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">{timeLeft}s</span>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center gap-4">
+        {!started ? (
+          <div className="glass-card rounded-2xl p-10 text-center max-w-md w-full">
+            <h2
+              className="text-3xl font-black glow-cyan-text mb-3"
+              style={{ fontFamily: "'Orbitron', sans-serif" }}
+            >
+              Nav Warrior
+            </h2>
+            <p className="text-muted-foreground mb-4 text-sm">
+              Use the Arrow Keys to move your character through the grid and
+              collect all items before time runs out.
+            </p>
+            <div className="flex justify-center gap-2 mb-6">
+              <div className="flex flex-col items-center gap-1">
+                <div className="w-8 h-8 rounded border border-border/50 flex items-center justify-center">
+                  <ArrowUp className="h-4 w-4" />
+                </div>
+                <div className="flex gap-1">
+                  <div className="w-8 h-8 rounded border border-border/50 flex items-center justify-center">
+                    <ArrowLeft className="h-4 w-4" />
+                  </div>
+                  <div className="w-8 h-8 rounded border border-border/50 flex items-center justify-center">
+                    <ArrowDown className="h-4 w-4" />
+                  </div>
+                  <div className="w-8 h-8 rounded border border-border/50 flex items-center justify-center">
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <GlowButton
+              variant="primary"
+              size="lg"
+              onClick={() => {
+                startRef.current = Date.now();
+                gameOverRef.current = false;
+                setStarted(true);
+                startTimer();
+              }}
+              data-ocid="nav_warrior.start_button"
+            >
+              Start Navigation
+            </GlowButton>
+          </div>
+        ) : (
+          <div
+            className="relative"
+            style={{
+              width: GRID_COLS * cellSize,
+              height: GRID_ROWS * cellSize,
+            }}
+          >
+            {Array.from({ length: GRID_ROWS }).map((_, row) =>
+              Array.from({ length: GRID_COLS }).map((__, col) => {
+                const isPlayer = playerPos.col === col && playerPos.row === row;
+                const item = items.find(
+                  (i) => i.col === col && i.row === row && !i.collected,
+                );
+                return (
+                  <div
+                    key={`${col}-${row}`}
+                    className={`absolute border border-border/20 flex items-center justify-center ${
+                      isPlayer
+                        ? "bg-[#00f5ff]/20 border-[#00f5ff]/60"
+                        : item
+                          ? "bg-[#f59e0b]/10"
+                          : "bg-card/20"
+                    }`}
+                    style={{
+                      left: col * cellSize,
+                      top: row * cellSize,
+                      width: cellSize,
+                      height: cellSize,
+                    }}
+                  >
+                    {isPlayer && (
+                      <div className="w-6 h-6 rounded-full bg-[#00f5ff] shadow-[0_0_12px_rgba(0,245,255,0.8)]" />
+                    )}
+                    {item && !isPlayer && (
+                      <div className="w-4 h-4 rounded bg-[#f59e0b]" />
+                    )}
+                  </div>
+                );
+              }),
+            )}
+          </div>
+        )}
+        {started && (
+          <div className="flex gap-2 text-xs text-muted-foreground">
+            <span>Moves: {moves}</span>
+            <span>|</span>
+            <ArrowUp className="h-3 w-3" />
+            <ArrowDown className="h-3 w-3" />
+            <ArrowLeft className="h-3 w-3" />
+            <ArrowRight className="h-3 w-3" />
+            <span>to move</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─ Root Export ─
+
+export default function KeyboardNinja({ config, onGameEnd }: Props) {
+  switch (config.gameId) {
+    case "keyboard-warrior":
+      return <KeyboardWarrior config={config} onGameEnd={onGameEnd} />;
+    case "function-key-boss":
+      return <FunctionKeyBoss config={config} onGameEnd={onGameEnd} />;
+    case "symbol-sprint":
+      return <SymbolSprint config={config} onGameEnd={onGameEnd} />;
+    case "nav-warrior":
+      return <NavWarrior config={config} onGameEnd={onGameEnd} />;
+    default:
+      return <KeyMastery config={config} onGameEnd={onGameEnd} />;
+  }
 }

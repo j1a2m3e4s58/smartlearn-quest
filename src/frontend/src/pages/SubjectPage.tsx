@@ -17,7 +17,6 @@ function DifficultyStars({
     <div className="flex gap-0.5">
       {Array.from({ length: max }).map((_, i) => (
         <Star
-          // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length star rating, positional index is stable
           key={`star-${i}`}
           className="h-3 w-3"
           style={{ color: i < filled ? color : undefined }}
@@ -204,8 +203,6 @@ export default function SubjectPage() {
   const subjectProgressPercent =
     totalHubs > 0 ? Math.round((unlockedPlayable / totalHubs) * 100) : 0;
 
-  const isICT = subjectId === "ict";
-
   return (
     <div
       className="relative min-h-screen bg-background"
@@ -325,8 +322,8 @@ export default function SubjectPage() {
           </div>
         </motion.div>
 
-        {/* Hub grid or coming soon */}
-        {isICT ? (
+        {/* Hub grid */}
+        {hubs.length > 0 ? (
           <div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             data-ocid="subject.hub.list"
@@ -368,23 +365,11 @@ export default function SubjectPage() {
                 color: subject.color,
               }}
             >
-              Coming Soon
+              No hubs available
             </h2>
-            <p className="text-sm text-muted-foreground max-w-xs leading-relaxed mb-6">
-              The {subject.name} world is being forged. Master ICT first to
-              unlock the next dimension.
+            <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
+              Content for {subject.name} is being prepared.
             </p>
-            <GlowButton
-              onClick={() =>
-                navigate({
-                  to: "/subject/$subjectId",
-                  params: { subjectId: "ict" },
-                })
-              }
-              data-ocid="subject.navigate_ict_button"
-            >
-              Explore ICT World
-            </GlowButton>
           </motion.div>
         )}
       </div>

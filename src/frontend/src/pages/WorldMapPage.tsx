@@ -1,9 +1,10 @@
+import { useAudioContext } from "@/audio/AudioProvider";
 import { ParticleBackground } from "@/components/ui/ParticleBackground";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { SUBJECTS } from "@/data/subjects";
 import { useAllHubProgress } from "@/hooks/useBackend";
 import type { SubjectData } from "@/types";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BookOpen,
   Bot,
@@ -13,17 +14,19 @@ import {
   FlaskConical,
   Globe,
   Lock,
+  Map as MapIcon,
   Monitor,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { type CSSProperties, type ComponentType, useEffect } from "react";
 import { toast } from "sonner";
 
 const ICONS: Record<
   string,
-  React.ComponentType<{
+  ComponentType<{
     className?: string;
     size?: number;
-    style?: React.CSSProperties;
+    style?: CSSProperties;
   }>
 > = {
   Monitor,
@@ -196,6 +199,13 @@ function SubjectNode({
 export default function WorldMapPage() {
   const navigate = useNavigate();
   const { data: hubProgress = [] } = useAllHubProgress();
+  const { playAmbience, stopAmbience } = useAudioContext();
+
+  // Play menu ambience on mount, stop on unmount
+  useEffect(() => {
+    playAmbience("menu");
+    return () => stopAmbience();
+  }, [playAmbience, stopAmbience]);
 
   const getCompletedHubs = (subjectId: string) => {
     return hubProgress.filter((hp) => hp.hubId?.startsWith(subjectId)).length;
@@ -227,12 +237,95 @@ export default function WorldMapPage() {
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
+        {/* Hero section — Learning Worlds CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: -24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55 }}
+          className="mb-10"
+          data-ocid="world-map.hero_section"
+        >
+          <div
+            className="relative rounded-2xl overflow-hidden border"
+            style={{
+              background: "oklch(0.08 0.025 260 / 0.9)",
+              borderColor: "oklch(0.55 0.22 200 / 0.35)",
+              backdropFilter: "blur(16px)",
+              boxShadow:
+                "0 0 60px oklch(0.55 0.22 200 / 0.08), inset 0 1px 0 rgba(255,255,255,0.06)",
+            }}
+          >
+            {/* Top accent bar — cyan */}
+            <div
+              className="absolute top-0 left-0 right-0 h-px"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, oklch(0.75 0.18 200), transparent)",
+              }}
+            />
+
+            {/* Subtle radial glow */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 0%, oklch(0.55 0.22 200 / 0.06) 0%, transparent 60%)",
+              }}
+            />
+
+            <div className="relative px-6 py-8 sm:px-10 sm:py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              <div className="flex-1 min-w-0">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 mb-4">
+                  <MapIcon className="h-3 w-3 text-primary" />
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-primary">
+                    Structured Curriculum Path
+                  </span>
+                </div>
+                <h2
+                  className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-2"
+                  style={{
+                    fontFamily: "'Orbitron', sans-serif",
+                    background:
+                      "linear-gradient(135deg, oklch(0.85 0.18 200), oklch(0.75 0.22 260))",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  Learning Worlds
+                </h2>
+                <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
+                  Explore structured learning paths from Basic 1 to Basic 9.
+                  Each world contains hundreds of missions, games, and
+                  discoveries across all subjects.
+                </p>
+              </div>
+
+              <Link
+                to="/world"
+                data-ocid="world-map.explore_worlds_button"
+                className="flex-shrink-0 inline-flex items-center gap-2.5 px-6 py-3 rounded-xl font-bold text-sm tracking-wider uppercase transition-all duration-200 hover:scale-105 hover:brightness-110 active:scale-95"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.55 0.22 200), oklch(0.50 0.25 260))",
+                  color: "oklch(0.98 0.01 200)",
+                  boxShadow: "0 0 24px oklch(0.55 0.22 200 / 0.35)",
+                  fontFamily: "'Orbitron', sans-serif",
+                }}
+              >
+                <MapIcon className="h-4 w-4" />
+                Explore All Worlds
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10"
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-center mb-6"
           data-ocid="world-map.section"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 mb-5">
@@ -265,6 +358,18 @@ export default function WorldMapPage() {
             </p>
           </div>
         </motion.div>
+
+        {/* Quick Access section header */}
+        <div
+          className="flex items-center gap-3 mb-5"
+          data-ocid="world-map.quick_access_section"
+        >
+          <div className="h-px flex-1 bg-border/30" />
+          <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">
+            Quick Access
+          </span>
+          <div className="h-px flex-1 bg-border/30" />
+        </div>
 
         {/* World grid — responsive asymmetric layout */}
         <div
